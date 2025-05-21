@@ -1,6 +1,6 @@
 # Overview
-
-Example repository of deploying to Runpod with crewai + ollama for agent workflow
+Example repository of deploying to Runpod with crewai + ollama for agent workflow.
+Referenced off of: https://github.com/runpod-workers/worker-template
 
 ## Example Request:
 ```

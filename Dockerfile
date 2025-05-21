@@ -1,4 +1,25 @@
-FROM justinrunpod/pod-server-base:1.0
+FROM runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 
+
+# Install dependencies in a single RUN command
+RUN apt-get update --yes --quiet && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
+    software-properties-common \
+    gpg-agent \
+    build-essential \
+    apt-utils \
+    ca-certificates \
+    curl && \
+    add-apt-repository --yes ppa:deadsnakes/ppa && \
+    apt-get update --yes --quiet && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
+    python3.11 python3.11-venv python3.11-dev
+
+# Create and activate a Python virtual environment
+RUN python3.11 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
 # Set python3.11 as default
 RUN ln -sf $(which python3.11) /usr/local/bin/python && \
@@ -20,7 +41,7 @@ RUN pip install --upgrade pip && \
     python -c "import crewai; print(f'\nCrewAI version: {crewai.__version__}')" && \
     python -c "import crewai_tools; print('CrewAI Tools import successful')"
 
-# Install specific litellm fork
+# Install specific litellm fork - source code has bug with tooling index array
 RUN pip uninstall -y litellm && \
     pip install git+https://github.com/justinwlin/litellm.git@main --no-deps
 
@@ -30,10 +51,11 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 # Create required directories
 RUN mkdir -p /root/.ollama/models
 
-# Download model during build
+# Download model during build with better handling
 RUN ollama serve > /dev/null 2>&1 & \
     sleep 25 && \
     ollama pull openhermes && \
+    sleep 10 && \
     pkill ollama
 
 # Add application files
